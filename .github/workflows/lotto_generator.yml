@@ -32,8 +32,8 @@ jobs:
         # Uruchamiamy generator i zapisujemy wynik
         python3 lotto_generator.py > lotto_output.txt
         
-        # Wyciągamy liczby z wyniku (ostatnia linia przed separatorem)
-        NUMBERS=$(grep -A1 "TWOJE SZCZĘŚLIWE LICZBY LOTTO:" lotto_output.txt | tail -1 | xargs)
+        # Wyciągamy liczby z wyniku (linia z liczbami po nagłówku)
+        NUMBERS=$(grep -A3 "TWOJE SZCZĘŚLIWE LICZBY LOTTO:" lotto_output.txt | grep -E "^\s+[0-9]" | xargs)
         echo "numbers=$NUMBERS" >> $GITHUB_OUTPUT
         
         # Zapisujemy pełny output dla debugowania
@@ -54,14 +54,17 @@ jobs:
         DATE=$(date '+%Y-%m-%d %H:%M')
         
         # Wiadomość z emojis i formatowaniem
-        MESSAGE="🎰 LOTTO GENERATOR
-
-        🎯 Twoje szczęśliwe liczby: $NUMBERS
-
-        📅 Wygenerowano: $DATE
+        MESSAGE=$(cat << 'EOF'
+        🎰 LOTTO GENERATOR
+        
+        🎯 Twoje szczęśliwe liczby: ${NUMBERS}
+        
+        📅 Wygenerowano: ${DATE}
         🍀 Powodzenia w losowaniu!
-
-        🤖 Automatycznie wygenerowane przez GitHub Actions"
+        
+        🤖 Automatycznie wygenerowane przez GitHub Actions
+        EOF
+        )
 
         # Wysyłamy przez Pushover API
         curl -s \
