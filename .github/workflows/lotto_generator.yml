@@ -54,17 +54,14 @@ jobs:
         DATE=$(date '+%Y-%m-%d %H:%M')
         
         # Wiadomość z emojis i formatowaniem
-        MESSAGE=$(cat << 'EOF'
-        🎰 LOTTO GENERATOR
-        
-        🎯 Twoje szczęśliwe liczby: ${NUMBERS}
-        
-        📅 Wygenerowano: ${DATE}
+        MESSAGE="🎰 LOTTO GENERATOR
+
+        🎯 Twoje szczęśliwe liczby: $NUMBERS
+
+        📅 Wygenerowano: $DATE
         🍀 Powodzenia w losowaniu!
-        
-        🤖 Automatycznie wygenerowane przez GitHub Actions
-        EOF
-        )
+
+        🤖 Automatycznie wygenerowane przez GitHub Actions"
 
         # Wysyłamy przez Pushover API
         curl -s \
