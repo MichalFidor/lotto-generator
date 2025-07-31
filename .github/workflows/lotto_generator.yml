@@ -36,6 +36,22 @@ jobs:
         NUMBERS=$(grep -A3 "TWOJE SZCZĘŚLIWE LICZBY LOTTO:" lotto_output.txt | grep -E "^\s+[0-9]" | xargs)
         echo "numbers=$NUMBERS" >> $GITHUB_OUTPUT
         
+        # Wyciągamy strategię
+        STRATEGY=$(grep "📊 Strategia:" lotto_output.txt | sed 's/.*📊 Strategia: //')
+        echo "strategy=$STRATEGY" >> $GITHUB_OUTPUT
+        
+        # Wyciągamy sumę
+        SUM=$(grep "➕ Suma:" lotto_output.txt | sed 's/.*➕ Suma: //' | sed 's/ .*//')
+        echo "sum=$SUM" >> $GITHUB_OUTPUT
+        
+        # Wyciągamy ocenę eksperta
+        RATING=$(grep "⭐ Ocena eksperta:" lotto_output.txt | sed 's/.*⭐ Ocena eksperta: //')
+        echo "rating=$RATING" >> $GITHUB_OUTPUT
+        
+        # Wyciągamy sekwencje
+        SEQUENCES=$(grep "🔗 Sekwencje:" lotto_output.txt | sed 's/.*🔗 Sekwencje: //')
+        echo "sequences=$SEQUENCES" >> $GITHUB_OUTPUT
+        
         # Zapisujemy pełny output dla debugowania
         echo "full_output<<EOF" >> $GITHUB_OUTPUT
         cat lotto_output.txt >> $GITHUB_OUTPUT
@@ -51,14 +67,25 @@ jobs:
       run: |
         # Przygotowujemy dane do wysłania
         NUMBERS="${{ steps.generate.outputs.numbers }}"
+        STRATEGY="${{ steps.generate.outputs.strategy }}"
+        SUM="${{ steps.generate.outputs.sum }}"
+        RATING="${{ steps.generate.outputs.rating }}"
+        SEQUENCES="${{ steps.generate.outputs.sequences }}"
         DATE=$(date '+%Y-%m-%d %H:%M')
         
-        # Wiadomość z emojis i formatowaniem
-        MESSAGE="🎰 LOTTO GENERATOR
+        # Wiadomość z rekomendacjami eksperta
+        MESSAGE="🎰 INTELIGENTNY GENERATOR LOTTO
 
-        🎯 Twoje szczęśliwe liczby: $NUMBERS
+        🎯 Liczby: $NUMBERS
+
+        🧠 REKOMENDACJE EKSPERTA:
+        📊 Strategia: $STRATEGY
+        ➕ Suma: $SUM (optymalna: 120-180)
+        🔗 Sekwencje: $SEQUENCES
+        ⭐ Ocena: $RATING
 
         📅 Wygenerowano: $DATE
+        🔬 Oparte na analizie 7,223 losowań (1957-2025)
         🍀 Powodzenia w losowaniu!
 
         🤖 Automatycznie wygenerowane przez GitHub Actions"
@@ -67,7 +94,7 @@ jobs:
         curl -s \
           --form-string "token=$PUSHOVER_TOKEN" \
           --form-string "user=$PUSHOVER_USER" \
-          --form-string "title=🎲 Nowe liczby lotto!" \
+          --form-string "title=🎲 Inteligentne liczby lotto!" \
           --form-string "message=$MESSAGE" \
           --form-string "priority=0" \
           --form-string "sound=cashregister" \
