@@ -1,0 +1,81 @@
+name: Lotto Generator
+
+on:
+  schedule:
+    # Wtorek, czwartek, sobota o 18:00 UTC (20:00 CET w zimie, 19:00 CET w lecie)
+    - cron: '0 18 * * 2,4,6'
+  
+  # Możliwość ręcznego uruchomienia
+  workflow_dispatch:
+
+jobs:
+  generate-lotto:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+    
+    - name: Generate lotto numbers
+      id: generate
+      run: |
+        # Uruchamiamy generator i zapisujemy wynik
+        python3 lotto_generator.py > lotto_output.txt
+        
+        # Wyciągamy liczby z wyniku (ostatnia linia przed separatorem)
+        NUMBERS=$(grep -A1 "TWOJE SZCZĘŚLIWE LICZBY LOTTO:" lotto_output.txt | tail -1 | xargs)
+        echo "numbers=$NUMBERS" >> $GITHUB_OUTPUT
+        
+        # Zapisujemy pełny output dla debugowania
+        echo "full_output<<EOF" >> $GITHUB_OUTPUT
+        cat lotto_output.txt >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        # Wyświetlamy wyniki w logu
+        cat lotto_output.txt
+    
+    - name: Send Pushover notification
+      env:
+        PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+        PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+      run: |
+        # Przygotowujemy dane do wysłania
+        NUMBERS="${{ steps.generate.outputs.numbers }}"
+        DATE=$(date '+%Y-%m-%d %H:%M')
+        
+        # Wiadomość z emojis i formatowaniem
+        MESSAGE="🎰 LOTTO GENERATOR
+
+        🎯 Twoje szczęśliwe liczby: $NUMBERS
+
+        📅 Wygenerowano: $DATE
+        🍀 Powodzenia w losowaniu!
+
+        🤖 Automatycznie wygenerowane przez GitHub Actions"
+
+        # Wysyłamy przez Pushover API
+        curl -s \
+          --form-string "token=$PUSHOVER_TOKEN" \
+          --form-string "user=$PUSHOVER_USER" \
+          --form-string "title=🎲 Nowe liczby lotto!" \
+          --form-string "message=$MESSAGE" \
+          --form-string "priority=0" \
+          --form-string "sound=cashregister" \
+          https://api.pushover.net/1/messages.json
+    
+    - name: Upload lotto output as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: lotto-output-${{ github.run_number }}
+        path: lotto_output.txt
+        retention-days: 30
